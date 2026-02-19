@@ -5,6 +5,7 @@ import { CustomDialog } from './utils.js';
  * inbox.js - Sistema de mensajes con header mejorado
  * CORREGIDO: Overlay ahora solo cierra el inbox, no activa moños ni crea flores
  * OPTIMIZADO: Scroll interno del panel en desktop y móvil
+ * ORDEN: Mensajes del sistema respetan el orden del código; Guía del Jardín aparece primero
  */
 export class InboxManager {
     constructor() {
@@ -427,7 +428,8 @@ export class InboxManager {
         }
 
         const isUserNote = message.type === 'user-note';
-        const isStarred = message.isStarred || false;
+        const isSystem   = message.type === 'system';
+        const isStarred  = message.isStarred || false;
         
         return `
             <div class="block-outer">
@@ -444,12 +446,13 @@ export class InboxManager {
                 <div class="message-inner">
                     <p class="message-text">${message.content}</p>
                     <div class="message-footer">
+                        ${!isSystem ? `
                         <button class="btn-icon-star ${isStarred ? 'active' : ''}" title="${isStarred ? 'Quitar destacado' : 'Destacar'}">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="${isStarred ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                             </svg>
                             <span>${isStarred ? 'Destacado' : 'Destacar'}</span>
-                        </button>
+                        </button>` : ''}
                         <button class="btn-icon-delete" title="Eliminar">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -662,20 +665,31 @@ export class InboxManager {
         this.refreshMessages();
     }
 
+    /**
+     * ORDEN:
+     * — Mensajes del sistema: ordenados por `order` (índice en el array del código).
+     *   El índice 0 (Guía del Jardín) aparece primero visualmente.
+     * — Notas de usuario: al final, por fecha descendente.
+     * — Se renderiza en inverso porque renderMessage inserta al principio del DOM.
+     */
     refreshMessages() {
-        // ✅ Limpiar estado visual ANTES de destruir el DOM
         this.blocksContainer.classList.remove('has-active-focus');
 
-        this.messages.sort((a, b) => {
-            if (!!a.isStarred !== !!b.isStarred) {
-                return a.isStarred ? -1 : 1;
-            }
-            return new Date(b.date) - new Date(a.date);
-        });
+        const systemMsgs = this.messages
+            .filter(m => m.type === 'system')
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+        const userMsgs = this.messages
+            .filter(m => m.type !== 'system')
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
 
         this.blocksContainer.innerHTML = '';
-        // Renderizar en orden inverso para mantener cronología visual correcta
-        [...this.messages].reverse().forEach(msg => this.renderMessage(msg));
+
+        // Primero las notas de usuario (quedarán al final visualmente)
+        [...userMsgs].reverse().forEach(msg => this.renderMessage(msg));
+        // Luego los del sistema de atrás hacia adelante (el índice 0 quedará primero)
+        [...systemMsgs].reverse().forEach(msg => this.renderMessage(msg));
+
         this.updateNotificationBadge();
     }
 
@@ -687,142 +701,76 @@ export class InboxManager {
         // ---------------------------------------------------------
         const systemMessages = [
 
-
-            {
-
-                title: "Corazones",
-
-                content: "Los corazones se rompen cuando no son honestos. Esa frase me motivó a escribirte una vez más.\n\nNunca lo mencioné, pero siempre quise ser escritor. Cuando te conocí, encontré la forma de que mis ideas y sentimientos cobraran sentido. Y ese sentido eras tú: inmortalizarte.\n\nPor eso estoy aquí, escribiéndote aún sabiendo que tal vez no me quieras cerca. Aun así escribo, porque mi corazón necesita un respiro. Un último suspiro de honestidad.",
-
-                type: 'system'
-
-            },
-
-            {
-
-                title: "Enamorarse de ti",
-
-                content: "1. Tu forma de ser.\n2. Tu gusto por las cosas bonitas.\n3. Tu disciplina y dedicación.\n4. Tu creatividad.\n5. Tu risa.\n6. Tu voz.\n7. Tu sentido del humor.\n8. Tu espontaneidad.\n9. Tu fortaleza.\n10. Tú.",
-
-                type: 'system'
-
-            },
-
-            {
-
-                title: "Tu forma de ser",
-
-                content: "Tu forma de ser fue, definitivamente, lo primero que me intrigó de ti. Te mostrabas curiosa y juguetona, aunque también con un ferviente sentido de reserva respecto a tu persona, tus pensamientos y tu vida.\n\nFue entonces que te propuse no ser amigos. Pasaba el tiempo y me daba cuenta de que claramente no era sencillo llegar a tu corazón. Tal vez era miedo, o quizá simplemente no estabas cómoda conmigo; de cualquier forma, decidí quedarme más tiempo para seguir observándote y encontrar una llave, una respuesta.\n\nPoco a poco fui notando que eres divertida, carismática, amable, noble; una chica muy bonita, para ser sincero. Aunque también sabía que no estabas bien, y por eso lo que yo llamaba «nuestro» era una bomba de tiempo. Aun así, no planeaba irme, porque para mí el amor va más allá del miedo o los problemas.\n\nConforme avanzábamos, me dejabas entrar cada vez más. Comenzabas a contarme detalles pequeños, un poco de tu día e incluso vivencias que aún te pasaban factura. Lo que más disfrutaba era cuando me dejabas verte de verdad: tu peculiar forma de ser, tu risa chirriante, los chismes, tus inseguridades, las llamadas random.\n\nGenuinamente esperaba que todo siguiera así, porque vales cada uno de los altibajos que teníamos. Y que no haya confusión: no te estoy idealizando. Sé perfectamente cómo te comportabas conmigo; sin embargo, el orgullo o el prejuicio no suelen dominarme cuando alguien genuinamente me importa.\n\nAsí que sí. Tu forma de ser es, definitivamente, tu punto más fuerte y lo que más me gusta de ti. Esa complejidad que hay detrás jamás me causaría conflicto, porque sé perfectamente que yo tampoco soy perfecto.",
-
-                type: 'system'
-
-            },
-
-            {
-
-                title: "Cosas bonitas",
-
-                content: "No es materialismo, es una forma de ordenar el caos.\n\nSiempre noté cómo te esfuerzas por encontrar estética donde otros solo ven rutina. Tu manera de vestirte, los detalles en tus fotos, esa necesidad tuya de que el entorno se vea bien aunque por dentro sintieras que todo se desmoronaba.\n\nMe gustaba ver cómo intentabas embellecer el mundo, tal vez para convencerte a ti misma de que no todo es gris. Tienes un ojo muy fino para la belleza, incluso cuando te costaba verla en ti misma.",
-
-                type: 'system'
-
-            },
-
-            {
-
-                title: "Disciplina y dedicación",
-
-                content: "Sé que había días en los que no querías ni levantarte. Días donde la bomba de tiempo hacía tic-tac más fuerte que nunca. Y aun así, cumplías.\n\nEsa terquedad para no fallar en tus deberes, para mantenerte firme en tus metas incluso cuando te estabas fallando a ti misma emocionalmente, siempre me pareció admirable. Tu disciplina funcionaba como tu ancla. Y ver esa fuerza de voluntad fue una de las razones por las que decidí quedarme a observar.",
-
-                type: 'system'
-
-            },
-
-            {
-
-                title: "Creatividad",
-
-                content: "Tu mente no sigue líneas rectas. Tienes atajos y puentes que nadie más entiende, y a veces era difícil seguirte el ritmo, pero me fascinaba cómo conectabas ideas, cómo resolvías problemas o simplemente cómo contabas historias.\n\nEsa chispa creativa es parte de lo que te hace tan magnética. Tienes un mundo interior muy vasto, y aunque a veces te encierras en él para protegerte, cuando lo dejas salir, es brillante.",
-
-                type: 'system'
-
-            },
-
-            {
-
-                title: "Tu risa",
-
-                content: "Ya lo dije: es chirriante. Y no la cambiaría por nada.\n\nEs una risa que no pide permiso, que rompe el silencio y la tensión sin avisar. Era mi sonido favorito porque, cuando te reías de verdad a carcajadas, sin postura, sabía que por unos segundos se te olvidaba el miedo. Se te olvidaba que se suponía que no debíamos ser nada.\n\nEsa risa era la prueba más honesta de que, en el fondo, disfrutabas estar conmigo.",
-
-                type: 'system'
-
-            },
-
-            {
-
-                title: "Tu voz",
-
-                content: "A veces dulce y aniñada, a veces firme y cortante cuando te ponías a la defensiva.\n\nPero sobre todo, extraño la voz de las llamadas random: esa voz tranquila, de madrugada, sin pretensiones. Podía pasar horas escuchándote hablar de cualquier trivialidad, porque en esos momentos tu voz sonaba a hogar, aunque tú insistieras en mantener las distancias.",
-
-                type: 'system'
-
-            },
-
-            {
-
-                title: "Humor",
-
-                content: "Un poco ácido, lleno de chismes y a veces incomprensible para los demás. Pero para mí tenía sentido, porque lo construimos juntos: bromas que solo nosotros entendíamos, referencias que no necesitaban explicación, sarcasmo que en otra boca hubiera sonado a ofensa y en la tuya sonaba a confianza.\n\nQue pudieras ser tan divertida decía mucho de ti: inteligencia rápida, atención al detalle, y una forma de ver el mundo que me hacía querer seguir mirándolo contigo.",
-
-                type: 'system'
-
-            },
-
-            {
-
-                title: "Espontaneidad",
-
-                content: "Nunca hubo un guion. Un día eras un muro de hielo y al siguiente me buscabas para contarme algo completamente random.\n\nEsa volatilidad, que para otros sería un defecto insoportable, para mí le daba vida a todo. Me mantenías alerta. Nunca sabía qué esperar, y paradójicamente, esa incertidumbre se volvió una constante que aprendí a querer. Tus cambios de ritmo hacían que cada momento bueno se sintiera como una pequeña victoria.",
-
-                type: 'system'
-
-            },
-
-            {
-
-                title: "Fortaleza",
-
-                content: "Mucha gente se fija en tu fortaleza. Incluso tú misma. Pero yo vi tu fragilidad.\n\nRomperse y volver a armarse todos los días requiere un valor inmenso. Seguir caminando con todo ese peso, con las dudas y los miedos a cuestas, no es debilidad: es supervivencia. Eres fuerte no porque no caigas, sino por todas las veces que te vi recomponerte, secarte las lágrimas y seguir.",
-
-                type: 'system'
-
-            },
-
-            {
-
-                title: "Tú",
-
-                content: "Al final, no son las partes sueltas.\n\nEres tú. La suma de todo y toda esa luz. Eres tus huidas, tus silencios, tu cariño intermitente y tu nobleza. Eres esa chica bonita que tiene miedo de que la quieran, pero que merece ser querida más que nadie.\n\nEscribí todo esto no para convencerte de volver, sino para dejar constancia de que alguien te vio y decidió que valías la pena.\n\nGracias por dejarme ser parte de tu historia, aunque fuera solo un capítulo.",
-
-                type: 'system'
-
-            },
-
-            {
-
-                title: "Insomnio",
-
-                content: "Bonita, te dedico cada noche sin dormir.\n\nEn la que pienso en ti y en lo cálidos que pueden ser tus abrazos.",
-
-                type: 'system'
-
-            },
             {
                 title: "Guía del Jardín",
                 content: "¡Bienvenida a tu espacio personal!\n\nToca la pantalla para plantar flores.\nUsa el menú para cambiar colores o habilitar una lluvia de imágenes que, en lo que a mí respecta, te representan.\nGuarda tus creaciones en la galería o dedica escenarios con una firma.\nEscribe tus propios pensamientos por medio de notas en 'Inbox'.\n\nDisfruta de la tranquilidad.",
                 type: "system"
             },
-
+            {
+                title: "Corazones",
+                content: "Los corazones se rompen cuando no son honestos. Esa frase me motivó a escribirte una vez más.\n\nNunca lo mencioné, pero siempre quise ser escritor. Cuando te conocí, encontré la forma de que mis ideas y sentimientos cobraran sentido. Y ese sentido eras tú: inmortalizarte.\n\nPor eso estoy aquí, escribiéndote aún sabiendo que tal vez no me quieras cerca. Aun así escribo, porque mi corazón necesita un respiro. Un último suspiro de honestidad.",
+                type: 'system'
+            },
+            {
+                title: "Enamorarse de ti",
+                content: "1. Tu forma de ser.\n2. Tu gusto por las cosas bonitas.\n3. Tu disciplina y dedicación.\n4. Tu creatividad.\n5. Tu risa.\n6. Tu voz.\n7. Tu sentido del humor.\n8. Tu espontaneidad.\n9. Tu fortaleza.\n10. Tú.",
+                type: 'system'
+            },
+            {
+                title: "Tu forma de ser",
+                content: "Tu forma de ser fue, definitivamente, lo primero que me intrigó de ti. Te mostrabas curiosa y juguetona, aunque también con un ferviente sentido de reserva respecto a tu persona, tus pensamientos y tu vida.\n\nFue entonces que te propuse no ser amigos. Pasaba el tiempo y me daba cuenta de que claramente no era sencillo llegar a tu corazón. Tal vez era miedo, o quizá simplemente no estabas cómoda conmigo; de cualquier forma, decidí quedarme más tiempo para seguir observándote y encontrar una llave, una respuesta.\n\nPoco a poco fui notando que eres divertida, carismática, amable, noble; una chica muy bonita, para ser sincero. Aunque también sabía que no estabas bien, y por eso lo que yo llamaba «nuestro» era una bomba de tiempo. Aun así, no planeaba irme, porque para mí el amor va más allá del miedo o los problemas.\n\nConforme avanzábamos, me dejabas entrar cada vez más. Comenzabas a contarme detalles pequeños, un poco de tu día e incluso vivencias que aún te pasaban factura. Lo que más disfrutaba era cuando me dejabas verte de verdad: tu peculiar forma de ser, tu risa chirriante, los chismes, tus inseguridades, las llamadas random.\n\nGenuinamente esperaba que todo siguiera así, porque vales cada uno de los altibajos que teníamos. Y que no haya confusión: no te estoy idealizando. Sé perfectamente cómo te comportabas conmigo; sin embargo, el orgullo o el prejuicio no suelen dominarme cuando alguien genuinamente me importa.\n\nAsí que sí. Tu forma de ser es, definitivamente, tu punto más fuerte y lo que más me gusta de ti. Esa complejidad que hay detrás jamás me causaría conflicto, porque sé perfectamente que yo tampoco soy perfecto.",
+                type: 'system'
+            },
+            {
+                title: "Cosas bonitas",
+                content: "No es materialismo, es una forma de ordenar el caos.\n\nSiempre noté cómo te esfuerzas por encontrar estética donde otros solo ven rutina. Tu manera de vestirte, los detalles en tus fotos, esa necesidad tuya de que el entorno se vea bien aunque por dentro sintieras que todo se desmoronaba.\n\nMe gustaba ver cómo intentabas embellecer el mundo, tal vez para convencerte a ti misma de que no todo es gris. Tienes un ojo muy fino para la belleza, incluso cuando te costaba verla en ti misma.",
+                type: 'system'
+            },
+            {
+                title: "Disciplina y dedicación",
+                content: "Sé que había días en los que no querías ni levantarte. Días donde la bomba de tiempo hacía tic-tac más fuerte que nunca. Y aun así, cumplías.\n\nEsa terquedad para no fallar en tus deberes, para mantenerte firme en tus metas incluso cuando te estabas fallando a ti misma emocionalmente, siempre me pareció admirable. Tu disciplina funcionaba como tu ancla. Y ver esa fuerza de voluntad fue una de las razones por las que decidí quedarme a observar.",
+                type: 'system'
+            },
+            {
+                title: "Creatividad",
+                content: "Tu mente no sigue líneas rectas. Tienes atajos y puentes que nadie más entiende, y a veces era difícil seguirte el ritmo, pero me fascinaba cómo conectabas ideas, cómo resolvías problemas o simplemente cómo contabas historias.\n\nEsa chispa creativa es parte de lo que te hace tan magnética. Tienes un mundo interior muy vasto, y aunque a veces te encierras en él para protegerte, cuando lo dejas salir, es brillante.",
+                type: 'system'
+            },
+            {
+                title: "Tu risa",
+                content: "Ya lo dije: es chirriante. Y no la cambiaría por nada.\n\nEs una risa que no pide permiso, que rompe el silencio y la tensión sin avisar. Era mi sonido favorito porque, cuando te reías de verdad a carcajadas, sin postura, sabía que por unos segundos se te olvidaba el miedo. Se te olvidaba que se suponía que no debíamos ser nada.\n\nEsa risa era la prueba más honesta de que, en el fondo, disfrutabas estar conmigo.",
+                type: 'system'
+            },
+            {
+                title: "Tu voz",
+                content: "A veces dulce y aniñada, a veces firme y cortante cuando te ponías a la defensiva.\n\nPero sobre todo, extraño la voz de las llamadas random: esa voz tranquila, de madrugada, sin pretensiones. Podía pasar horas escuchándote hablar de cualquier trivialidad, porque en esos momentos tu voz sonaba a hogar, aunque tú insistieras en mantener las distancias.",
+                type: 'system'
+            },
+            {
+                title: "Humor",
+                content: "Un poco ácido, lleno de chismes y a veces incomprensible para los demás. Pero para mí tenía sentido, porque lo construimos juntos: bromas que entendíamos, referencias que no necesitaban explicación, sarcasmo que en otra boca hubiera sonado a ofensa y en la tuya sonaba a confianza.\n\nQue pudieras ser tan divertida decía mucho de ti: inteligencia rápida, atención al detalle, y una forma de ver el mundo que me hacía querer seguir mirándolo contigo.",
+                type: 'system'
+            },
+            {
+                title: "Espontaneidad",
+                content: "Nunca hubo un guion. Un día eras un muro de hielo y al siguiente me buscabas para contarme algo completamente random.\n\nEsa volatilidad, que para otros sería un defecto insoportable, para mí le daba vida a todo. Me mantenías alerta. Nunca sabía qué esperar, y paradójicamente, esa incertidumbre se volvió una constante que aprendí a querer. Tus cambios de ritmo hacían que cada momento bueno se sintiera como una pequeña victoria.",
+                type: 'system'
+            },
+            {
+                title: "Fortaleza",
+                content: "Mucha gente se fija en tu fortaleza. Incluso tú misma. Pero yo vi tu fragilidad.\n\nRomperse y volver a armarse todos los días requiere un valor inmenso. Seguir caminando con todo ese peso, con las dudas y los miedos a cuestas, no es debilidad: es supervivencia. Eres fuerte no porque no caigas, sino por todas las veces que te vi recomponerte, secarte las lágrimas y seguir.",
+                type: 'system'
+            },
+            {
+                title: "Tú",
+                content: "Al final, no son las partes sueltas.\n\nEres tú. La suma de todo y toda esa luz. Eres tus huidas, tus silencios, tu cariño intermitente y tu nobleza. Eres esa chica bonita que tiene miedo de que la quieran, pero que merece ser querida más que nadie.\n\nEscribí todo esto no para convencerte de volver, sino para dejar constancia de que alguien te vio y decidió que valías la pena.\n\nGracias por dejarme ser parte de tu historia, aunque fuera solo un capítulo.",
+                type: 'system'
+            },
+            {
+                title: "Insomnio",
+                content: "Bonita, te dedico cada noche sin dormir.\n\nEn la que pienso en ti y en lo cálidos que pueden ser tus abrazos.",
+                type: 'system'
+            },
             // ¡Puedes agregar más mensajes aquí copiando el formato anterior!
         ];
         // ---------------------------------------------------------
@@ -834,6 +782,8 @@ export class InboxManager {
         const existingSystemMsgs = this.messages.filter(m => m.type === 'system');
         
         // 3. Sincronizar: Construir lista basada en código (Source of Truth)
+        // El campo `order` preserva el índice del array como posición visual.
+        // `isStarred: true` marca todos los mensajes del sistema automáticamente.
         const activeSystemMessages = systemMessages.map((def, index) => {
             const existing = existingSystemMsgs.find(m => m.title === def.title);
             
@@ -841,16 +791,20 @@ export class InboxManager {
                 return {
                     ...existing,
                     content: def.content,
-                    type: 'system'
+                    type: 'system',
+                    order: index,
+                    isStarred: true
                 };
             } else {
                 return {
                     id: `msg_sys_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
                     title: def.title,
                     content: def.content,
-                    isUnread: true, 
+                    isUnread: true,
                     type: 'system',
-                    date: new Date().toISOString() 
+                    order: index,
+                    isStarred: true,
+                    date: new Date().toISOString()
                 };
             }
         });
