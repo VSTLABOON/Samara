@@ -1,10 +1,6 @@
 import * as THREE from 'https://cdn.skypack.dev/three@0.133.1/build/three.module';
 import { storage } from './storage.js';
 
-/**
- * SHADERS POR DEFECTO (FALLBACK)
- * Para evitar que la app se rompa si faltan los scripts en el HTML
- */
 const DEFAULT_VERTEX_SHADER = `
 varying vec2 vUv;
 void main() {
@@ -34,7 +30,6 @@ void main() {
     
     vec4 color = texture2D(u_texture, uv);
     
-    // Lógica básica de flor (círculo simple como fallback)
     float d = distance(p, c);
     float mask = 1.0 - smoothstep(0.0, 0.05, d);
     
@@ -55,15 +50,10 @@ varying vec2 vUv;
 
 void main() {
     vec2 uv = vUv;
-    // Efecto de viento suave (Sway)
     float wind = sin(uv.y * 5.0 + u_time * 1.5) * 0.003 * uv.y;
     gl_FragColor = texture2D(u_texture, uv + vec2(wind, 0.0));
 }
 `;
-
-/**
- * FlowerCanvas - VERSIÓN CORREGIDA
- */
 
 export class FlowerCanvas {
     constructor(canvasSelector) {
@@ -80,8 +70,8 @@ export class FlowerCanvas {
         this.isTouchScreen = false;
         this.isAnimating = false;
         this.currentColorScheme = 'default';
-        this.flowerQueue = []; // Cola para restaurar flores
-        this.savedFlowers = []; // Datos persistentes
+        this.flowerQueue = [];
+        this.savedFlowers = [];
         
         this._listenersInstalled = false;
 
@@ -89,17 +79,21 @@ export class FlowerCanvas {
     }
 
     init() {
-        // Definir paleta accesible globalmente PRIMERO para evitar errores
         this.schemes = {
-            default: { f: [1.0, 0.9, 0.95], s: [0.05, 0.15, 0.05] }, // Blanco cálido
-            red:     { f: [1.0, 0.1, 0.2],  s: [0.05, 0.15, 0.05] }, // Rojo vibrante
-            wine:    { f: [0.6, 0.0, 0.2],  s: [0.05, 0.15, 0.05] }, // Vino profundo
-            pink:    { f: [1.0, 0.4, 0.7],  s: [0.05, 0.15, 0.05] }, // Rosa chicle
-            blue:    { f: [0.2, 0.5, 1.0],  s: [0.05, 0.15, 0.08] }, // Azul cielo
-            purple:  { f: [0.6, 0.2, 1.0],  s: [0.05, 0.15, 0.08] }, // Violeta eléctrico
-            yellow:  { f: [1.0, 0.9, 0.1],  s: [0.05, 0.15, 0.05] }, // Amarillo puro (Tallo verde corregido)
-            white:   { f: [1.0, 1.0, 1.0],  s: [0.05, 0.15, 0.05] }  // Blanco puro
+            default: { f: [1.0, 0.9, 0.95], s: [0.05, 0.15, 0.05] },
+            red:     { f: [1.0, 0.1, 0.2],  s: [0.05, 0.15, 0.05] },
+            wine:    { f: [0.6, 0.0, 0.2],  s: [0.05, 0.15, 0.05] },
+            pink:    { f: [1.0, 0.4, 0.7],  s: [0.05, 0.15, 0.05] },
+            blue:    { f: [0.2, 0.5, 1.0],  s: [0.05, 0.15, 0.08] },
+            purple:  { f: [0.6, 0.2, 1.0],  s: [0.05, 0.15, 0.08] },
+            yellow:  { f: [1.0, 0.9, 0.1],  s: [0.05, 0.15, 0.05] },
+            white:   { f: [1.0, 1.0, 1.0],  s: [0.05, 0.15, 0.05] }
         };
+
+        // FIX: Pool de colores para modo aleatorio.
+        // Se excluyen 'default' y 'white' porque son visualmente idénticos al color base,
+        // lo que hacía que el modo aleatorio pareciera siempre blanco.
+        this._randomPool = ['red', 'wine', 'pink', 'blue', 'purple', 'yellow'];
 
         this.setupRenderer();
         this.setupScenes();
@@ -107,14 +101,9 @@ export class FlowerCanvas {
         this.setupRenderTargets();
         this.createPlane();
         this.updateSize();
-        
-        // CRÍTICO: Setup de eventos AL FINAL
         this.setupEvents();
-        
         this.startRenderLoop();
         this.setColorScheme('default');
-
-        // Restaurar jardín previo
         this.restoreGarden();
         
         console.log('✅ FlowerCanvas: Completamente inicializado');
@@ -138,8 +127,7 @@ export class FlowerCanvas {
     }
 
     setupCamera() {
-        const farPlane = 10; // Reducido a valor estándar ya que no hay objetos lejanos
-        this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, farPlane);
+        this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 10);
     }
 
     setupRenderTargets() {
@@ -157,11 +145,10 @@ export class FlowerCanvas {
     }
 
     createPlane() {
-        // CORRECCIÓN: Usar fallbacks si no existen los elementos en el DOM
         const vsEl = document.getElementById('vertexShader');
         const fsEl = document.getElementById('fragmentShader');
         
-        const vertexShader = (vsEl && vsEl.textContent.trim()) ? vsEl.textContent : DEFAULT_VERTEX_SHADER;
+        const vertexShader   = (vsEl && vsEl.textContent.trim()) ? vsEl.textContent : DEFAULT_VERTEX_SHADER;
         const fragmentShader = (fsEl && fsEl.textContent.trim()) ? fsEl.textContent : DEFAULT_FRAGMENT_SHADER;
         
         if (!vsEl || !fsEl || !vsEl.textContent.trim() || !fsEl.textContent.trim()) {
@@ -170,27 +157,26 @@ export class FlowerCanvas {
         
         this.shaderMaterial = new THREE.ShaderMaterial({
             uniforms: {
-                u_stop_time: { value: 0 },
+                u_stop_time:       { value: 0 },
                 u_stop_randomizer: { value: new THREE.Vector2(Math.random(), Math.random()) },
-                u_cursor: { value: new THREE.Vector2(this.pointer.x, this.pointer.y) },
-                u_ratio: { value: window.innerWidth / window.innerHeight },
-                u_texture: { value: null },
-                u_clean: { value: 1 },
-                u_flower_color: { value: new THREE.Vector3(1, 1, 1) },
-                u_stem_color: { value: new THREE.Vector3(0.5, 0.8, 0.5) },
-                u_stem_thickness: { value: 1.0 },
-                u_size_scale: { value: 1.0 } // Nuevo uniform para escala
+                u_cursor:          { value: new THREE.Vector2(this.pointer.x, this.pointer.y) },
+                u_ratio:           { value: window.innerWidth / window.innerHeight },
+                u_texture:         { value: null },
+                u_clean:           { value: 1 },
+                u_flower_color:    { value: new THREE.Vector3(1, 1, 1) },
+                u_stem_color:      { value: new THREE.Vector3(0.5, 0.8, 0.5) },
+                u_stem_thickness:  { value: 1.0 },
+                u_size_scale:      { value: 1.0 }
             },
             vertexShader,
             fragmentShader,
             transparent: true
         });
 
-        // Usar ShaderMaterial para efecto de viento en el display
         this.basicMaterial = new THREE.ShaderMaterial({
             uniforms: {
                 u_texture: { value: null },
-                u_time: { value: 0 }
+                u_time:    { value: 0 }
             },
             vertexShader: DEFAULT_VERTEX_SHADER,
             fragmentShader: DISPLAY_FRAGMENT_SHADER,
@@ -208,14 +194,19 @@ export class FlowerCanvas {
         }
     }
 
+    // FIX: _pickRandomColor centraliza la lógica de selección aleatoria.
+    // Antes estaba duplicada en setColorScheme y addFlower con lógica ligeramente distinta,
+    // lo que causaba inconsistencias. Ahora hay una única fuente de verdad.
+    _pickRandomColor() {
+        const pool = this._randomPool;
+        return pool[Math.floor(Math.random() * pool.length)];
+    }
+
     setColorScheme(scheme) {
         this.currentColorScheme = scheme;
         
         if (scheme === 'random') {
-            // ✅ Aplicar un color aleatorio inicial inmediatamente
-            const keys = Object.keys(this.schemes).filter(k => k !== 'default');
-            const randomScheme = keys[Math.floor(Math.random() * keys.length)] || 'red';
-            this._applyUniformsForScheme(randomScheme);
+            this._applyUniformsForScheme(this._pickRandomColor());
         } else {
             this._applyUniformsForScheme(scheme);
         }
@@ -224,7 +215,7 @@ export class FlowerCanvas {
     _applyUniformsForScheme(schemeName) {
         const colors = this.schemes[schemeName] || this.schemes.default;
         this.updateUniform('u_flower_color', new THREE.Vector3(...colors.f));
-        this.updateUniform('u_stem_color', new THREE.Vector3(...colors.s));
+        this.updateUniform('u_stem_color',   new THREE.Vector3(...colors.s));
     }
 
     setupEvents() {
@@ -235,16 +226,12 @@ export class FlowerCanvas {
         
         console.log('🎯 Instalando event listeners...');
         
-        // Handler para mouse y touch - CORREGIDO
         const handlePointerDown = (e) => {
             try {
                 let x, y;
                 
                 if (e.type === 'touchstart') {
-                    if (!e.touches || !e.touches[0]) {
-                        console.warn('⚠️ Evento touch sin coordenadas');
-                        return;
-                    }
+                    if (!e.touches || !e.touches[0]) return;
                     x = e.touches[0].clientX;
                     y = e.touches[0].clientY;
                     this.isTouchScreen = true;
@@ -253,31 +240,13 @@ export class FlowerCanvas {
                     y = e.clientY;
                 }
                 
-                // CORRECCIÓN: Validación estricta de coordenadas
-                if (x === undefined || y === undefined || 
-                    x === null || y === null || 
-                    typeof x !== 'number' || typeof y !== 'number' ||
-                    isNaN(x) || isNaN(y)) {
-                    console.warn('⚠️ Coordenadas inválidas:', x, y);
-                    return;
-                }
+                if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) return;
                 
-                console.log('👆 Click detectado en:', x, y);
-                
-                // Verificar límites del canvas
                 const rect = this.canvas.getBoundingClientRect();
-                if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-                    console.log('⚠️ Click fuera del canvas bounds');
-                    return;
-                }
+                if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) return;
                 
-                // Verificar modales
-                if (this.hasOpenModals()) {
-                    console.log('⚠️ Modal abierto, bloqueando click');
-                    return;
-                }
+                if (this.hasOpenModals()) return;
                 
-                console.log('✅ Click válido, creando flor...');
                 this.addFlower(x, y);
                 
             } catch (error) {
@@ -285,28 +254,14 @@ export class FlowerCanvas {
             }
         };
         
-        // IMPORTANTE: capture:true para capturar antes
-        this.canvas.addEventListener('mousedown', handlePointerDown, { 
-            capture: true, 
-            passive: false 
-        });
+        this.canvas.addEventListener('mousedown', handlePointerDown, { capture: true, passive: false });
+        this.canvas.addEventListener('touchstart', handlePointerDown, { capture: true, passive: false });
+        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault(), { capture: true });
         
-        this.canvas.addEventListener('touchstart', handlePointerDown, { 
-            capture: true, 
-            passive: false 
-        });
-        
-        // Prevenir menú contextual
-        this.canvas.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-        }, { capture: true });
-        
-        // Resize
         this._resizeHandler = () => this.updateSize();
         window.addEventListener('resize', this._resizeHandler);
         
         this._listenersInstalled = true;
-        
         console.log('✅ Event listeners instalados correctamente');
     }
 
@@ -320,65 +275,49 @@ export class FlowerCanvas {
             '.custom-dialog-overlay.active'
         ];
         
-        // CORRECCIÓN: Verificar visibilidad real
         return selectors.some(sel => {
             const el = document.querySelector(sel);
             if (!el) return false;
-            
-            // Verificar que esté realmente visible
             const styles = window.getComputedStyle(el);
-            const isVisible = styles.display !== 'none' && 
-                             styles.visibility !== 'hidden' && 
-                             parseFloat(styles.opacity) > 0;
-            
-            if (isVisible) {
-                console.log(`⚠️ Modal visible detectado: ${sel}`);
-            }
-            
-            return isVisible;
+            return styles.display !== 'none' && 
+                   styles.visibility !== 'hidden' && 
+                   parseFloat(styles.opacity) > 0;
         });
     }
 
     addFlower(x, y) {
         try {
-            // CORRECCIÓN: Validación robusta de coordenadas
-            if (x === undefined || y === undefined || 
-                x === null || y === null || 
-                typeof x !== 'number' || typeof y !== 'number' ||
-                isNaN(x) || isNaN(y)) {
+            if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) {
                 console.error('❌ addFlower: coordenadas inválidas:', x, y);
                 return;
             }
             
-            // Normalizar a [0, 1]
             this.pointer.x = x / window.innerWidth;
             this.pointer.y = y / window.innerHeight;
-            this.pointer.clicked = true;
 
-            // LÓGICA ALEATORIA:
-            // Si el modo es 'random', elegimos un color al azar AHORA y lo aplicamos
-            let colorToUse = this.currentColorScheme;
-            
+            // FIX: Determinar el color concreto ANTES de marcar el click.
+            // Antes, en modo aleatorio se llamaba _applyUniformsForScheme con el color elegido,
+            // pero si el render loop corría entre addFlower y la siguiente frame podía haber
+            // una llamada externa que pisara los uniforms. Ahora guardamos el color resuelto
+            // en this.pointer.pendingColor para que el render loop lo reaplique de forma
+            // determinista justo antes de renderizar esa flor.
+            let resolvedColor;
             if (this.currentColorScheme === 'random') {
-                const keys = Object.keys(this.schemes).filter(k => k !== 'default');
-                colorToUse = keys[Math.floor(Math.random() * keys.length)] || 'red';
+                resolvedColor = this._pickRandomColor();
+            } else {
+                resolvedColor = this.currentColorScheme;
             }
 
-            // Aplicar los uniformes para ESTA flor específica
-            this._applyUniformsForScheme(colorToUse);
+            this.pointer.pendingColor = resolvedColor;
+            this.pointer.clicked = true;
 
-            // OPTIMIZACIÓN DE PERSISTENCIA:
-            // Redondeamos coordenadas a 4 decimales para ahorrar espacio en localStorage
             const flowerData = {
-                x: parseFloat(this.pointer.x.toFixed(4)),
-                y: parseFloat(this.pointer.y.toFixed(4)),
-                color: colorToUse // Guardamos el color real usado (ej: 'red'), no 'random'
+                x:     parseFloat(this.pointer.x.toFixed(4)),
+                y:     parseFloat(this.pointer.y.toFixed(4)),
+                color: resolvedColor
             };
             this.savedFlowers.push(flowerData);
             this.saveToStorage();
-            
-            console.log('🌸 Flor creada en:', x, y, 
-                        '→ normalizada:', this.pointer.x.toFixed(3), this.pointer.y.toFixed(3));
             
         } catch (error) {
             console.error('❌ Error en addFlower:', error);
@@ -386,7 +325,6 @@ export class FlowerCanvas {
     }
 
     saveToStorage() {
-        // Debounce simple para no saturar storage
         if (this._saveTimeout) clearTimeout(this._saveTimeout);
         this._saveTimeout = setTimeout(() => {
             storage.saveGardenState(this.savedFlowers);
@@ -398,7 +336,6 @@ export class FlowerCanvas {
         if (saved && saved.length > 0) {
             console.log(`♻️ Restaurando ${saved.length} flores...`);
             this.savedFlowers = saved;
-            // Clonar array a la cola de procesamiento
             this.flowerQueue = [...saved];
         }
     }
@@ -406,8 +343,6 @@ export class FlowerCanvas {
     clean() {
         this.pointer.vanishCanvas = true;
         setTimeout(() => { this.pointer.vanishCanvas = false; }, 50);
-        
-        // Limpiar persistencia
         this.savedFlowers = [];
         storage.saveGardenState([]);
         console.log('🧹 Canvas limpiado');
@@ -421,10 +356,9 @@ export class FlowerCanvas {
         this.renderTargets[1].setSize(w, h);
         this.updateUniform('u_ratio', w / h);
 
-        // Lógica responsiva: Reducir tamaño en pantallas pequeñas para evitar saturación
         let scale = 1.0;
-        if (w < 600) scale = 0.5;       // Móvil: 50% del tamaño
-        else if (w < 1024) scale = 0.75; // Tablet: 75% del tamaño
+        if (w < 600)       scale = 0.5;
+        else if (w < 1024) scale = 0.75;
         
         this.updateUniform('u_size_scale', scale);
     }
@@ -439,34 +373,42 @@ export class FlowerCanvas {
 
         const deltaTime = this.clock.getDelta();
 
-        this.updateUniform('u_clean', this.pointer.vanishCanvas ? 0 : 1);
+        this.updateUniform('u_clean',   this.pointer.vanishCanvas ? 0 : 1);
         this.updateUniform('u_texture', this.renderTargets[0].texture);
 
-        // PROCESAR COLA DE RESTAURACIÓN (Si no hay click manual activo)
+        // Procesar cola de restauración
         if (!this.pointer.clicked && this.flowerQueue.length > 0) {
             const nextFlower = this.flowerQueue.shift();
             
-            // Restaurar color si es diferente
-            if (nextFlower.color && nextFlower.color !== this.currentColorScheme) {
-                this._applyUniformsForScheme(nextFlower.color);
-            }
+            // FIX: Siempre aplicar el color guardado al restaurar,
+            // sin importar el esquema actual del usuario.
+            const colorToRestore = nextFlower.color || 'default';
+            this._applyUniformsForScheme(colorToRestore);
             
-            this.pointer.x = nextFlower.x;
-            this.pointer.y = nextFlower.y;
-            this.pointer.clicked = true;
-            this.pointer.isRestoring = true; // Marcar como restauración
+            this.pointer.x            = nextFlower.x;
+            this.pointer.y            = nextFlower.y;
+            this.pointer.pendingColor = colorToRestore;
+            this.pointer.clicked      = true;
+            this.pointer.isRestoring  = true;
         }
 
         if (this.pointer.clicked) {
+            // FIX: Aplicar el color pendiente justo antes de renderizar.
+            // Esto garantiza que los uniforms del color y los del cursor/randomizer
+            // se envían al shader en el mismo frame, eliminando la condición de carrera.
+            if (this.pointer.pendingColor) {
+                this._applyUniformsForScheme(this.pointer.pendingColor);
+                this.pointer.pendingColor = null;
+            }
+
             this.updateUniform('u_cursor', new THREE.Vector2(this.pointer.x, 1 - this.pointer.y));
             this.updateUniform('u_stop_randomizer', new THREE.Vector2(Math.random(), Math.random()));
             
-            // FIX: Si estamos restaurando, forzar crecimiento completo inmediato
             if (this.pointer.isRestoring) {
-                this.updateUniform('u_stop_time', 10.0); // Flor adulta instantánea
+                this.updateUniform('u_stop_time', 10.0);
                 this.pointer.isRestoring = false;
             } else {
-                this.updateUniform('u_stop_time', 0); // Flor nueva (animación normal)
+                this.updateUniform('u_stop_time', 0);
             }
             
             this.pointer.clicked = false;
@@ -478,7 +420,7 @@ export class FlowerCanvas {
         this.renderer.render(this.sceneShader, this.camera);
         
         this.basicMaterial.uniforms.u_texture.value = this.renderTargets[1].texture;
-        this.basicMaterial.uniforms.u_time.value += deltaTime;
+        this.basicMaterial.uniforms.u_time.value   += deltaTime;
         
         this.renderer.setRenderTarget(null);
         this.renderer.render(this.sceneBasic, this.camera);
@@ -494,60 +436,31 @@ export class FlowerCanvas {
         return this.canvas.toDataURL('image/png');
     }
 
-    /**
-     * DEBUG: Sistema de clicks
-     */
     debugClickSystem() {
         console.group('🔍 Sistema de Clicks - Debug');
         
         const canvas = this.canvas;
-        if (!canvas) {
-            console.error('❌ Canvas no existe');
-            console.groupEnd();
-            return;
-        }
+        if (!canvas) { console.error('❌ Canvas no existe'); console.groupEnd(); return; }
         
-        const rect = canvas.getBoundingClientRect();
+        const rect   = canvas.getBoundingClientRect();
         const styles = window.getComputedStyle(canvas);
-        const containerStyles = window.getComputedStyle(canvas.parentElement);
         
         console.log('Canvas:', {
-            id: canvas.id,
-            width: rect.width,
-            height: rect.height,
-            top: rect.top,
-            left: rect.left,
+            width: rect.width, height: rect.height,
             pointerEvents: styles.pointerEvents,
-            cursor: styles.cursor,
             zIndex: styles.zIndex
         });
-        
-        console.log('Container:', {
-            pointerEvents: containerStyles.pointerEvents,
-            zIndex: containerStyles.zIndex
-        });
-        
-        console.log('Listeners:', {
-            instalados: this._listenersInstalled
-        });
-        
         console.log('Modales abiertos:', this.hasOpenModals());
-        
         console.log('Estado:', {
             isAnimating: this.isAnimating,
-            currentColorScheme: this.currentColorScheme
+            currentColorScheme: this.currentColorScheme,
+            randomPool: this._randomPool
         });
         
         console.groupEnd();
         
-        // Test visual
         canvas.style.border = '2px solid lime';
-        console.log('✅ Borde verde activado en canvas (3 segundos)');
-        
-        setTimeout(() => {
-            canvas.style.border = '';
-            console.log('✅ Borde removido');
-        }, 3000);
+        setTimeout(() => { canvas.style.border = ''; }, 3000);
     }
 
     dispose() {

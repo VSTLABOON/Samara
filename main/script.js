@@ -219,7 +219,7 @@ class App {
         if (!settings.lastVisit) {
             // Primera vez: Mostrar tutorial/bienvenida
             await CustomDialog.alert(
-                '¡Bienvenida! ',
+                '¡Bienvenida! Para mayor contexto dirigete hacia la sección Inbox',
                 'Comenzar'
             );
         }

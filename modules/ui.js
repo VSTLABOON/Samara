@@ -103,8 +103,27 @@ export class UI_Manager {
     setupRainView() {
         if (!this.views.rain) return;
 
+        // --- INICIO: MODIFICACIÓN PARA SCROLL ---
+        // Evitar doble wrapping si ya existe
+        if (this.views.rain.querySelector('.rain-scroll-wrapper')) return;
+
+        const scrollWrapper = document.createElement('div');
+        scrollWrapper.className = 'rain-scroll-wrapper';
+        
+        // Identificar header para mantenerlo fijo (mejor UX)
+        const header = this.views.rain.querySelector('.menu-header');
+        
+        // Mover contenido (todo menos el header) al wrapper
+        const children = Array.from(this.views.rain.children);
+        children.forEach(child => {
+            if (child !== header) {
+                scrollWrapper.appendChild(child);
+            }
+        });
+        this.views.rain.appendChild(scrollWrapper);
+
         // Modos individuales - CON CAPTURE PHASE
-        this.views.rain.querySelectorAll('.rain-mode-btn').forEach(btn => {
+        scrollWrapper.querySelectorAll('.rain-mode-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 if (!this.isMenuOpen) {
                     e.stopPropagation();
@@ -121,17 +140,17 @@ export class UI_Manager {
                     this.rain.setModes([mode]);
                 }
                 
-                this.views.rain.querySelectorAll('.rain-mode-btn').forEach(b => b.classList.remove('active'));
-                this.views.rain.querySelectorAll('.combo-btn').forEach(b => b.classList.remove('active'));
+                scrollWrapper.querySelectorAll('.rain-mode-btn').forEach(b => b.classList.remove('active'));
+                scrollWrapper.querySelectorAll('.combo-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 
                 storage.saveRainState(this.rain.getState());
                 showNotification(`Modo ${mode} seleccionado`);
-            }, true);
+            });
         });
 
         // Combinaciones - CON CAPTURE PHASE
-        this.views.rain.querySelectorAll('.combo-btn').forEach(btn => {
+        scrollWrapper.querySelectorAll('.combo-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 if (!this.isMenuOpen) {
                     e.stopPropagation();
@@ -143,17 +162,17 @@ export class UI_Manager {
                 const combo = btn.dataset.combo.split(',');
                 this.rain.setModes(combo);
                 
-                this.views.rain.querySelectorAll('.rain-mode-btn').forEach(b => b.classList.remove('active'));
-                this.views.rain.querySelectorAll('.combo-btn').forEach(b => b.classList.remove('active'));
+                scrollWrapper.querySelectorAll('.rain-mode-btn').forEach(b => b.classList.remove('active'));
+                scrollWrapper.querySelectorAll('.combo-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 
                 storage.saveRainState(this.rain.getState());
                 showNotification(`Combinación ${combo.join(' + ')} seleccionada`);
-            }, true);
+            });
         });
 
         // Activar lluvia - CON CAPTURE PHASE
-        const activateBtn = this.views.rain.querySelector('.btn-rain-activate');
+        const activateBtn = scrollWrapper.querySelector('.btn-rain-activate');
         if (activateBtn) {
             activateBtn.addEventListener('click', (e) => {
                 if (!this.isMenuOpen) {
@@ -177,8 +196,30 @@ export class UI_Manager {
                 
                 storage.saveRainState(this.rain.getState());
                 showNotification(isActive ? 'Lluvia activada ✨' : 'Lluvia detenida');
-            }, true);
+            });
         }
+
+        // Evitar que el scroll táctil se propague al canvas
+        scrollWrapper.addEventListener('touchmove', (e) => {
+            e.stopPropagation();
+        }, { passive: true });
+
+        // Evitar que wheel escape al body cuando el wrapper llega a sus límites
+        scrollWrapper.addEventListener('wheel', (e) => {
+            const atTop    = scrollWrapper.scrollTop === 0 && e.deltaY < 0;
+            const atBottom = scrollWrapper.scrollTop + scrollWrapper.clientHeight >= scrollWrapper.scrollHeight && e.deltaY > 0;
+            if (!atTop && !atBottom) {
+                e.stopPropagation();
+            }
+        }, { passive: true });
+
+        // FIX DEFINITIVO: Prevenir que el menú se cierre al interactuar con el scroll.
+        // Al hacer 'mousedown' en cualquier parte del área de scroll (incluida la barra),
+        // detenemos la propagación del evento. Esto evita que un 'click' se complete
+        // en el 'overlay' que está detrás, lo que cerraría el panel.
+        scrollWrapper.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+        });
     }
 
     getColorName(color) {

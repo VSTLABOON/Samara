@@ -129,6 +129,7 @@
     pointer-events: none !important;
     visibility: hidden;
     opacity: 0;
+    z-index: 1000 !important; /* Asegurar que esté sobre el canvas */
     
     /* Posicionamiento centrado */
     position: fixed !important;
@@ -136,8 +137,12 @@
     bottom: 100px !important; /* Altura suficiente sobre la nav */
     width: min(380px, 92vw) !important;
     transform: translate(-50%, 20px); /* Centrado horizontal + offset vertical */
-    
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Altura máxima al menú para que el scroll tenga contexto */
+    max-height: min(520px, 80vh) !important;
+    display: flex;
+    flex-direction: column;
 }
 
 /* TODOS los elementos hijos también transparentes cuando está cerrado */
@@ -149,6 +154,19 @@
 .unified-menu .color-grid,
 .unified-menu .rain-modes-grid {
     pointer-events: none !important;
+}
+
+/* Layout para vistas internas del menú */
+.unified-menu .menu-view {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0; /* CRÍTICO para que el scroll funcione en flex */
+    overflow: hidden;
+}
+
+.unified-menu .menu-view.active {
+    display: flex;
 }
 
 /* Estado ABIERTO: Menú visible pero contenedor principal sigue transparente */
@@ -464,6 +482,55 @@
 .edit-input-content {
     min-height: 100px;
 }
+
+/* =========================================
+   SCROLL PARA VISTA DE LLUVIA
+   ========================================= */
+ .unified-menu .view-rain {
+     padding: 0 !important;
+     flex: 1;
+     min-height: 0;
+     display: flex;
+     flex-direction: column;
+ }
+ 
+ .unified-menu .view-rain .menu-header {
+     flex-shrink: 0;
+ }
+ 
+ .rain-scroll-wrapper {
+     flex: 1;
+     min-height: 0;        /* CRÍTICO */
+     max-height: none;     /* flex lo controla ahora */
+     overflow-y: auto;
+     overflow-x: hidden;
+     padding: 16px;
+     touch-action: pan-y;
+     -webkit-overflow-scrolling: touch;
+     overscroll-behavior: contain;
+     pointer-events: auto !important;
+     scrollbar-width: thin;
+     scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+ }
+ 
+ .rain-scroll-wrapper * {
+     pointer-events: auto !important;
+ }
+ 
+ .rain-scroll-wrapper::-webkit-scrollbar {
+     width: 6px;
+ }
+ 
+ .rain-scroll-wrapper::-webkit-scrollbar-thumb {
+     background-color: rgba(255, 255, 255, 0.3);
+     border-radius: 6px;
+ }
+ 
+ @media (max-height: 600px) {
+     .unified-menu {
+         max-height: 70vh !important;
+     }
+ }
 
 /* Estilo para mensajes destacados */
 .message-block.starred {
