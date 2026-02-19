@@ -444,7 +444,7 @@ export class InboxManager {
             </div>
             <div class="block-content">
                 <div class="message-inner">
-                    <p class="message-text">${message.content}</p>
+                    <div class="message-text" style="white-space: pre-wrap;">${message.content}</div>
                     <div class="message-footer">
                         ${!isSystem ? `
                         <button class="btn-icon-star ${isStarred ? 'active' : ''}" title="${isStarred ? 'Quitar destacado' : 'Destacar'}">
@@ -719,7 +719,7 @@ export class InboxManager {
             },
             {
                 title: "Enamorarse de ti",
-                content: "1. Tu forma de ser.\n2. Tu gusto por las cosas bonitas.\n3. Tu disciplina y dedicación.\n4. Tu creatividad.\n5. Tu risa.\n6. Tu voz.\n7. Tu sentido del humor.\n8. Tu espontaneidad.\n9. Tu fortaleza.\n10. Tú.",
+                content: "<ol style='padding-left: 24px; margin: 0; list-style-position: outside;'><li>Tu forma de ser.</li><li>Tu gusto por las cosas bonitas.</li><li>Tu disciplina y dedicación.</li><li>Tu creatividad.</li><li>Tu risa.</li><li>Tu voz.</li><li>Tu sentido del humor.</li><li>Tu espontaneidad.</li><li>Tu fortaleza.</li><li>Tú.</li></ol>",
                 type: 'system'
             },
             {
