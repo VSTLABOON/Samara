@@ -1,0 +1,89 @@
+/* =========================================
+   NAVEGACIÓN INFERIOR - VERSIÓN CORREGIDA
+   ========================================= */
+
+.bottom-nav {
+    width: 100%; 
+    height: auto; /* ✅ Cambiado de var(--nav-height) */
+    min-height: 60px; /* Altura mínima razonable */
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-ui);
+    box-shadow: var(--shadow-soft);
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    padding: 0 clamp(8px, 2vw, 12px); 
+    pointer-events: none; /* ✅ CRÍTICO: Contenedor transparente a eventos */
+    position: fixed; /* ✅ Asegurar posicionamiento */
+    bottom: 16px; /* ✅ Separación del borde */
+    left: 16px;
+    right: 16px;
+    z-index: 100; /* ✅ Encima del canvas */
+}
+
+.bottom-nav::before {
+    content: ''; 
+    position: absolute; 
+    top: 0; left: 0; right: 0; 
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    pointer-events: none; /* ✅ Asegurar que decoraciones no bloqueen */
+}
+
+.nav-item {
+    background: transparent; 
+    border: none;
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center;
+    gap: 4px; 
+    color: var(--text-secondary); 
+    cursor: pointer;
+    padding: clamp(6px, 2vw, 10px); 
+    flex: 0 0 auto; /* ✅ NO estirar los botones */
+    min-width: 60px; /* ✅ Ancho mínimo controlado */
+    transition: 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    position: relative;
+    pointer-events: auto; /* ✅ SOLO los botones capturan eventos */
+    z-index: 1; /* ✅ Asegurar que estén accesibles */
+}
+
+.nav-item svg { 
+    width: clamp(18px, 4vw, 22px); 
+    height: clamp(18px, 4vw, 22px); 
+    opacity: 0.7; 
+    transition: 0.3s;
+    pointer-events: none; /* ✅ SVG no debe capturar eventos independientemente */
+}
+
+.nav-item span { 
+    font-size: clamp(10px, 2vw, 12px);
+    pointer-events: none; /* ✅ Texto no debe capturar eventos independientemente */
+}
+
+.nav-item.active, .nav-item:hover { color: var(--text-primary); }
+.nav-item.active svg { 
+    opacity: 1; 
+    transform: translateY(-2px); 
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.4)); 
+}
+
+.nav-add { position: relative; }
+
+.notification-badge {
+    position: absolute; 
+    top: 8px; right: 8px;
+    background: #fff; color: #000; 
+    font-size: 9px; font-weight: 700;
+    min-width: 14px; height: 14px; 
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transform: scale(0); 
+    transition: 0.3s; padding: 0 4px;
+    pointer-events: none; /* ✅ Badge decorativo, no interactivo */
+}
+.notification-badge.active { opacity: 1; transform: scale(1); }

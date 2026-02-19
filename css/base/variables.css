@@ -1,0 +1,30 @@
+:root {
+    /* Layout */
+    --ui-width: min(600px, 94vw);
+    --nav-height: 80px;
+    --gap-ui: 16px;
+    --radius-ui: 28px;
+    --radius-icon: 20px;
+
+    /* Glassmorphism */
+    --glass-bg: rgba(18, 18, 24, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-highlight: rgba(255, 255, 255, 0.03);
+    --glass-blur: 24px;
+    --shadow-soft: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+
+    /* Text & Z-Index */
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.55);
+    --accent-pink: #f472b6;
+
+    /* Z-Layers System */
+    --z-bg: 0;
+    --z-canvas: 1;
+    --z-text: 10;
+    --z-overlay: 50;
+    --z-ui: 100;
+    --z-menu: 150;
+    --z-modal: 200;
+    --z-dialog: 9999;
+}

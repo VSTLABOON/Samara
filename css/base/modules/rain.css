@@ -1,0 +1,61 @@
+.rain-container {
+    position: fixed; inset: 0; pointer-events: none;
+    z-index: 3; overflow: hidden; opacity: 0; transition: opacity 1s ease;
+}
+
+.rain-floor-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Dejar pasar clicks al canvas de flores */
+    z-index: 3;
+}
+
+.rain-particle {
+    position: absolute; pointer-events: none; will-change: transform, top;
+}
+.rain-particle img {
+    width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.rain-modes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+
+.rain-mode-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: clamp(12px, 3vw, 20px); background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(255,255,255,0.1); border-radius: 12px;
+    color: white; cursor: pointer; transition: all 0.3s; font-size: clamp(12px, 2.5vw, 14px);
+}
+.rain-mode-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+.rain-mode-btn.active {
+    background: rgba(100,200,255,0.2); border-color: rgba(100,200,255,0.5);
+    box-shadow: 0 0 20px rgba(100,200,255,0.3);
+}
+
+.mode-icon { font-size: clamp(24px, 6vw, 32px); }
+
+.rain-combination { margin-bottom: 20px; padding: 16px; background: rgba(0,0,0,0.2); border-radius: 12px; }
+.rain-combination .combo-label {
+    display: block; margin-bottom: 12px; font-size: clamp(11px, 2.5vw, 13px); color: rgba(255,255,255,0.7);
+}
+
+.combo-grid { display: flex; flex-direction: column; gap: 8px; }
+.combo-btn {
+    padding: clamp(8px, 2vw, 10px); background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+    color: white; cursor: pointer; transition: 0.3s; font-size: clamp(11px, 2.5vw, 13px);
+}
+.combo-btn:hover { background: rgba(255,255,255,0.1); }
+.combo-btn.active { background: rgba(150,100,255,0.2); border-color: rgba(150,100,255,0.5); }
+
+.btn-rain-activate {
+    width: 100%; padding: clamp(12px, 3vw, 16px);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none; border-radius: 12px; color: white; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    gap: 10px; transition: all 0.3s; font-size: clamp(12px, 2.5vw, 14px);
+}
+.btn-rain-activate:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.4); }
+.btn-rain-activate.active { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }

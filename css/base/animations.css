@@ -1,0 +1,30 @@
+/**
+ * animations.css
+ * Animaciones generales del sistema
+ */
+
+/* =========================================
+   OPTIMIZACIÓN DE RENDIMIENTO
+   ========================================= */
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes breathe {
+    0%, 100% { 
+        transform: scale(1); 
+        border-color: rgba(255,255,255,0.15); 
+    }
+    50% { 
+        transform: scale(1.01); 
+        border-color: rgba(255,255,255,0.3); 
+        box-shadow: 0 0 25px rgba(255,255,255,0.05); 
+    }
+}

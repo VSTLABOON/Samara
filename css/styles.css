@@ -1,0 +1,472 @@
+/* css/main.css */
+
+/* Fuentes externas */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+/* 1. Base (Configuración inicial) */
+@import 'base/variables.css';
+@import 'base/animations.css';
+@import 'base/reset.css';
+
+/* 2. Layout (Estructura de la página y fondos) */
+@import 'base/layout/structure.css';
+/* @import 'base/layout/themes.css'; */ /* Descomentar si existe */
+
+/* 3. Components (Elementos de Interfaz) */
+@import 'base/components/dialogs.css';
+@import 'base/components/navigation.css';
+@import 'base/components/menu.css';
+
+/* 4. Modules (Funcionalidades específicas - Match con JS) */
+@import 'base/modules/rain.css';
+@import 'base/modules/inbox.css';
+@import 'base/modules/gallery.css';
+@import 'base/modules/dedicatory.css';
+@import 'base/modules/critters.css';
+
+/* 5. Utilities (Correcciones y Overrides finales) */
+@import 'base/utils/fixes.css';
+
+/* =========================================
+   FIXES CRÍTICOS DE INTERACCIÓN
+   ========================================= */
+
+/* El diálogo bloqueaba el canvas por defecto. Forzamos estado inactivo. */
+.custom-dialog-overlay {
+    pointer-events: none !important;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s;
+    z-index: 20000 !important;
+}
+
+.custom-dialog-overlay.active {
+    pointer-events: auto !important;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease;
+}
+
+/* =========================================
+   OCULTAR ELEMENTOS OBSOLETOS
+   ========================================= */
+[data-action="bows"], .tool-item[data-action="bows"] {
+    display: none !important;
+}
+
+/* =========================================
+   NAVEGACIÓN DESPLEGABLE (FAB STYLE)
+   ========================================= */
+
+.nav-dynamic-container {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none !important; /* CRÍTICO: El contenedor debe ser invisible al mouse */
+    height: auto !important; /* Evitar alturas fijas innecesarias */
+    align-items: center; /* Evitar que los hijos se estiren verticalmente (stretch) */
+}
+
+/* Asegurar que pseudo-elementos (sombras/fondos) no bloqueen */
+.nav-dynamic-container::before,
+.nav-dynamic-container::after {
+    pointer-events: none !important;
+}
+
+/* Asegurar que los botones sean interactivos PERO solo su contenido real */
+.nav-dynamic-container .nav-item {
+    pointer-events: auto !important;
+    align-self: center; /* Evita que el botón ocupe toda la altura del contenedor */
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    margin-top: 0; /* Centrado vertical */
+}
+
+/* Estado Colapsado: Ocultar todo menos el botón + */
+.nav-dynamic-container.nav-collapsed {
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    padding: 0 !important;
+    width: auto !important;
+}
+
+.nav-dynamic-container.nav-collapsed .nav-item:not([data-action="add"]) {
+    display: none;
+    opacity: 0;
+}
+
+/* Estilo especial para el botón + cuando está colapsado (Botón Flotante) */
+.nav-dynamic-container.nav-collapsed .nav-item[data-action="add"] {
+    background: rgba(20, 20, 30, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    margin: 0 auto;
+}
+
+/* =========================================
+   FIXES ADICIONALES DE ESTRUCTURA
+   ========================================= */
+/* Asegurar que contenedores internos comunes no bloqueen */
+.bottom-nav, .nav-wrapper, .tools-grid {
+    pointer-events: none !important;
+}
+
+/* =========================================
+   FIX DEFINITIVO: MENÚ UNIFICADO NO DEBE BLOQUEAR CANVAS
+   ========================================= */
+
+/* Estado CERRADO (por defecto): Menú completamente inactivo */
+.unified-menu {
+    pointer-events: none !important;
+    visibility: hidden;
+    opacity: 0;
+    
+    /* Posicionamiento centrado */
+    position: fixed !important;
+    left: 50% !important;
+    bottom: 100px !important; /* Altura suficiente sobre la nav */
+    width: min(380px, 92vw) !important;
+    transform: translate(-50%, 20px); /* Centrado horizontal + offset vertical */
+    
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* TODOS los elementos hijos también transparentes cuando está cerrado */
+.unified-menu *,
+.unified-menu .menu-view,
+.unified-menu .menu-view *,
+.unified-menu .menu-header,
+.unified-menu .tools-grid,
+.unified-menu .color-grid,
+.unified-menu .rain-modes-grid {
+    pointer-events: none !important;
+}
+
+/* Estado ABIERTO: Menú visible pero contenedor principal sigue transparente */
+.unified-menu.open {
+    pointer-events: none !important; /* Contenedor sigue sin bloquear */
+    visibility: visible;
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* Vista activa también es transparente como contenedor */
+.unified-menu.open .menu-view.active {
+    pointer-events: none !important;
+}
+
+/* SOLO elementos interactivos capturan eventos cuando el menú está abierto */
+.unified-menu.open .menu-view.active button,
+.unified-menu.open .menu-view.active input,
+.unified-menu.open .menu-view.active select,
+.unified-menu.open .menu-view.active textarea,
+.unified-menu.open .menu-view.active a,
+/* Añadir elementos interactivos personalizados (divs) */
+.unified-menu.open .menu-view.active .tool-item,
+.unified-menu.open .menu-view.active .rain-mode-btn,
+.unified-menu.open .menu-view.active .combo-btn,
+.unified-menu.open .menu-view.active .color-option,
+.unified-menu.open .menu-view.active .btn-rain-activate {
+    pointer-events: auto !important;
+}
+
+/* Headers deben ser interactivos cuando el menú está abierto */
+.unified-menu.open .menu-header {
+    pointer-events: auto !important;
+}
+
+/* Decoraciones y pseudo-elementos NUNCA bloquean */
+.unified-menu::before,
+.unified-menu::after,
+.unified-menu *::before,
+.unified-menu *::after {
+    pointer-events: none !important;
+}
+
+/* =========================================
+   OVERRIDES DE COLORES (PALETA NUEVA)
+   ========================================= */
+.swatch.yellow {
+    background-color: #ffeb3b !important; /* Amarillo */
+}
+
+.swatch.white {
+    background-color: #ffffff !important; /* Blanco */
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Borde para visibilidad */
+}
+
+.swatch.random {
+    background: linear-gradient(135deg, #ff5252, #ffd740, #40c4ff, #e040fb);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* =========================================
+   MODAL DE PREVISUALIZACIÓN DE IMAGEN
+   ========================================= */
+.image-preview-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(5, 5, 10, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 12000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.image-preview-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.image-preview-content {
+    position: relative;
+    max-width: 95%;
+    max-height: 95%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-preview-content img {
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.image-preview-modal.active img {
+    transform: scale(1);
+}
+
+.image-preview-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.image-preview-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+/* =========================================
+   MENSAJES DEL SISTEMA (INBOX)
+   ========================================= */
+.message-block.system {
+    border-left: 3px solid #ffd700; /* Dorado */
+    background: linear-gradient(90deg, rgba(255, 215, 0, 0.05), transparent);
+}
+
+.message-block.system .block-title {
+    color: #ffd700 !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.message-block.system .block-indicator {
+    background: #ffd700;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* =========================================
+   NOTAS DE USUARIO (INBOX)
+   ========================================= */
+.inbox-compose {
+    padding: 20px 24px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    animation: fadeIn 0.3s ease;
+}
+
+.inbox-compose.active {
+    display: flex;
+}
+
+.inbox-compose input,
+.inbox-compose textarea {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: rgba(255, 255, 255, 0.9);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.inbox-compose input:focus,
+.inbox-compose textarea:focus {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.inbox-compose textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.message-block.user-note {
+    border-left: 3px solid #1de9b6; /* Turquesa */
+    background: linear-gradient(90deg, rgba(29, 233, 182, 0.05), transparent);
+}
+
+.message-block.user-note .block-title {
+    color: #1de9b6 !important;
+}
+
+.message-block.user-note .block-indicator {
+    background: #1de9b6;
+    box-shadow: 0 0 10px rgba(29, 233, 182, 0.4);
+}
+
+/* =========================================
+   FECHA Y EDICIÓN DE NOTAS
+   ========================================= */
+.block-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.message-time {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+}
+
+.message-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    gap: 8px;
+}
+
+.btn-icon-edit {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-icon-edit:hover {
+    color: #1de9b6;
+    background: rgba(29, 233, 182, 0.1);
+}
+
+.btn-icon-delete {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-icon-delete:hover {
+    color: #ff5252;
+    background: rgba(255, 82, 82, 0.1);
+}
+
+.btn-icon-star {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-icon-star:hover {
+    color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.btn-icon-star.active {
+    color: #ffd700;
+}
+
+/* Modo Edición */
+.message-block.editing {
+    cursor: default;
+}
+
+.edit-form {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.edit-input-title {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.edit-input-content {
+    min-height: 100px;
+}
+
+/* Estilo para mensajes destacados */
+.message-block.starred {
+    border-left-color: #ffd700 !important;
+    box-shadow: inset 4px 0 15px rgba(255, 215, 0, 0.1);
+}

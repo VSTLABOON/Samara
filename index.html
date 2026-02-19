@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flores para ti ✨</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- animations and dedicatory are imported in styles.css -->
+
+</head>
+<style>
+    .name { pointer-events: none !important; user-select: none !important; }
+    .living-background, .canvas-container { pointer-events: none !important; }
+    #canvas { pointer-events: auto !important; cursor: crosshair !important; }
+
+    /* CRITICAL: Prevenir FOUC (Flash of Unstyled Content) */
+    /* Asegura que los modales estén ocultos y posicionados correctamente antes de cargar CSS externo */
+    .dedicatory-modal, .gallery-modal {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; visibility: hidden; pointer-events: none;
+        z-index: -1;
+    }
+    .dedicatory-modal.active, .gallery-modal.active {
+        opacity: 1; visibility: visible; pointer-events: auto;
+        z-index: 2000;
+    }
+</style>
+<body class="night-deep">
+    <!-- Debug Script -->
+    <script>
+        window.addEventListener('error', function(e) {
+            const msg = document.createElement('div');
+            msg.style.cssText = 'position:fixed;top:0;left:0;right:0;background:rgba(255,0,0,0.9);color:white;padding:20px;z-index:99999;font-family:monospace;white-space:pre-wrap;';
+            msg.innerHTML = '<strong>ERROR CRÍTICO:</strong><br>' + (e.message || e) + '<br>' + (e.filename || '') + ':' + (e.lineno || '');
+            document.body.appendChild(msg);
+            console.error('Global Error:', e);
+        });
+    </script>
+
+    <!-- Background System -->
+    <div class="living-background">
+        <div class="bg-layer layer-1"></div>
+        <div class="bg-layer layer-2"></div>
+        <div class="bg-layer layer-3"></div>
+        <div class="ambient-particles"></div>
+    </div>
+
+    <!-- Canvas Container -->
+    <div class="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <!-- Título Central -->
+    <div class="name">
+        Click para añadir flores
+    </div>
+
+    <!-- UI Wrapper -->
+    <div class="ui-wrapper">
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-action="home" aria-label="Inicio">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"/></svg>
+                <span>Home</span>
+            </button>
+            <button class="nav-item" data-action="inbox" aria-label="Mensajes">
+                <div class="notification-badge"></div>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5C10 3.5 6.5 6 6.5 10C6.5 14 10 16.5 10 16.5C10 16.5 13.5 14 13.5 10C13.5 6 10 3.5 10 3.5Z" transform="translate(2 0)"/></svg>
+                <span>Inbox</span>
+            </button>
+            <button class="nav-item" data-action="tools" aria-label="Herramientas">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                <span>Tools</span>
+            </button>
+            <button class="nav-item" data-action="gallery" aria-label="Galería">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15L16 10L5 21"/></svg>
+                <span>Gallery</span>
+            </button>
+            <button class="nav-item nav-add" data-action="add" aria-label="Agregar">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5V19M5 12H19"/></svg>
+            </button>
+        </nav>
+
+        <!-- Unified Menu -->
+        <div class="unified-menu panel-float">
+            <!-- Vista Principal -->
+            <div class="menu-view view-main active">
+                <div class="menu-header">
+                    <h3>Herramientas</h3>
+                    <button class="menu-close" aria-label="Cerrar">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6L18 18"/></svg>
+                    </button>
+                </div>
+                <div class="tools-grid">
+                    <button class="tool-item" data-goto="colors">
+                        <div class="tool-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3C12 3 8 7 8 12C8 17 12 21 12 21"/></svg>
+                        </div>
+                        <span>Colores</span>
+                    </button>
+                    <button class="tool-item" data-action="bows">
+                        <div class="tool-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 12c2.5-2.5 6.5-2.5 9 0s2.5 6.5 0 9c-4 4-9 9-9 9s-5-5-9-9c-2.5-2.5-2.5-6.5 0-9s6.5-2.5 9 0z"></path>
+                                <path d="M12 12c2.5 2.5 6.5 2.5 9 0s2.5-6.5 0-9"></path>
+                                <path d="M12 12c-2.5 2.5-6.5 2.5-9 0s-2.5-6.5 0-9"></path>
+                            </svg>
+                        </div>
+                        <span>Moños</span>
+                    </button>
+                    <button class="tool-item" data-action="rain">
+                        <div class="tool-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 13v8M12 13v8M8 13v8M12 3L4 9h16L12 3z"/>
+                            </svg>
+                        </div>
+                        <span>Lluvia</span>
+                    </button>
+                    <button class="tool-item" data-action="clean">
+                        <div class="tool-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6H21M8 6V4C8 3.5 8.2 3 8.6 2.6C9 2.2 9.5 2 10 2H14C14.5 2 15 2.2 15.4 2.6C15.8 3 16 3.5 16 4V6M19 6V20C19 21.1 18.1 22 17 22H7C5.9 22 5 21.1 5 20V6H19Z"/></svg>
+                        </div>
+                        <span>Limpiar</span>
+                    </button>
+                    <button class="tool-item" data-action="dedicatory">
+                        <div class="tool-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        </div>
+                        <span>Dedicar</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vista de Colores -->
+            <div class="menu-view view-colors">
+                <div class="menu-header">
+                    <button class="menu-back" aria-label="Atrás">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                        <span>Atrás</span>
+                    </button>
+                    <h3>Color de Flores</h3>
+                </div>
+                <div class="color-grid">
+                    <button class="color-option active" data-color="random"><span class="swatch random"></span>Aleatorio</button>
+                    <button class="color-option" data-color="red"><span class="swatch red"></span>Rojo</button>
+                    <button class="color-option" data-color="wine"><span class="swatch wine"></span>Vino</button>
+                    <button class="color-option" data-color="pink"><span class="swatch pink"></span>Rosa</button>
+                    <button class="color-option" data-color="blue"><span class="swatch blue"></span>Azul</button>
+                    <button class="color-option" data-color="purple"><span class="swatch purple"></span>Morado</button>
+                    <button class="color-option" data-color="yellow"><span class="swatch yellow"></span>Amarillo</button>
+                    <button class="color-option" data-color="white"><span class="swatch white"></span>Blanco</button>
+                </div>
+            </div>
+
+            <!-- Vista de Lluvia -->
+            <div class="menu-view view-rain">
+                <div class="menu-header">
+                    <button class="menu-back">← Atrás</button>
+                    <h3>Lluvia</h3>
+                </div>
+                <div class="rain-modes-grid">
+                    <button class="rain-mode-btn" data-mode="cute">
+                        <span class="mode-icon">🌸</span>
+                        <span>Cute</span>
+                    </button>
+                    <button class="rain-mode-btn" data-mode="core">
+                        <span class="mode-icon">⭐</span>
+                        <span>Core</span>
+                    </button>
+                    <button class="rain-mode-btn" data-mode="belike">
+                        <span class="mode-icon">🦋</span>
+                        <span>BeLike</span>
+                    </button>
+                    <button class="rain-mode-btn" data-mode="all">
+                        <span class="mode-icon">✨</span>
+                        <span>Todo</span>
+                    </button>
+                </div>
+                <div class="rain-combination">
+                    <span class="combo-label">Combinar 2 tipos:</span>
+                    <div class="combo-grid">
+                        <button class="combo-btn" data-combo="cute,core">Cute + Core</button>
+                        <button class="combo-btn" data-combo="cute,belike">Cute + BeLike</button>
+                        <button class="combo-btn" data-combo="core,belike">Core + BeLike</button>
+                    </div>
+                </div>
+                <button class="btn-rain-activate">
+                    <span class="rain-status-icon">▶</span>
+                    <span class="rain-status-text">Activar Lluvia</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inbox Container -->
+    <div class="inbox-container">
+        <div class="inbox-header">
+            <h2>Mensajes guardados</h2>
+            <button class="inbox-close" aria-label="Cerrar">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M18 6L6 18M6 6L18 18"/></svg>
+            </button>
+        </div>
+        <!-- FALTABA ESTE ELEMENTO CRÍTICO: -->
+        <div class="inbox-blocks"></div>
+    </div>
+
+    <!-- Galería Modal -->
+    <div class="gallery-modal">
+        <div class="gallery-content">
+            <div class="gallery-header">
+                <h2>Galería</h2>
+                <button class="gallery-close" aria-label="Cerrar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6L18 18"/></svg>
+                </button>
+            </div>
+            <div class="gallery-body">
+                <div class="gallery-empty">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <path d="M21 15L16 10L5 21"/>
+                    </svg>
+                    <p>No hay flores guardadas aún</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dedicatory Modal -->
+    <div class="dedicatory-modal">
+        <div class="dedicatory-content">
+            <h2>Dedicar este jardín</h2>
+            <form class="dedicatory-form" id="dedicatoryForm">
+                <div class="form-group">
+                    <label for="dedicatory-name">Para</label>
+                    <input type="text" id="dedicatory-name" name="dedicatory-name" placeholder="Nombre de la persona">
+                </div>
+                <div class="form-group">
+                    <label for="dedicatory-message">Mensaje</label>
+                    <textarea id="dedicatory-message" name="dedicatory-message" placeholder="Escribe tu mensaje aquí..." maxlength="5000"></textarea>
+                </div>
+                <button type="button" class="btn-primary">Guardar dedicatoria</button>
+                <button type="button" class="btn-secondary">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Panel Overlay -->
+    <div class="panel-overlay"></div>
+
+    <!-- Custom Dialog -->
+    <div id="custom-dialog" class="custom-dialog-overlay">
+        <div class="custom-dialog-content">
+            <h3 class="dialog-title">Título</h3>
+            <p class="dialog-message">Mensaje</p>
+            <div class="dialog-actions">
+                <button class="btn-dialog btn-cancel">Cancelar</button>
+                <button class="btn-dialog btn-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shaders -->
+    <script type="x-shader/x-fragment" id="fragmentShader">
+        #define PI 3.14159265359
+        uniform float u_ratio;
+        uniform vec2 u_cursor;
+        uniform float u_stop_time;
+        uniform float u_clean;
+        uniform vec2 u_stop_randomizer;
+        uniform vec3 u_flower_color;
+        uniform vec3 u_stem_color;
+        uniform sampler2D u_texture;
+        uniform float u_stem_thickness;
+        uniform float u_size_scale;
+        varying vec2 vUv;
+        
+        vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+        
+        float snoise(vec2 v) {
+            const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+            vec2 i = floor(v + dot(v, C.yy));
+            vec2 x0 = v - i + dot(i, C.xx);
+            vec2 i1;
+            i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+            vec4 x12 = x0.xyxy + C.xxzz;
+            x12.xy -= i1;
+            i = mod289(i);
+            vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+            vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
+            m = m*m;
+            m = m*m;
+            vec3 x = 2.0 * fract(p * C.www) - 1.0;
+            vec3 h = abs(x) - 0.5;
+            vec3 ox = floor(x + 0.5);
+            vec3 a0 = x - ox;
+            m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
+            vec3 g;
+            g.x = a0.x * x0.x + h.x * x0.y;
+            g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+            return 130.0 * dot(m, g);
+        }
+        
+        float get_flower_shape(vec2 _p, float _pet_n, float _angle, float _outline) {
+            _angle *= 3.;
+            _p = vec2(_p.x * cos(_angle) - _p.y * sin(_angle), _p.x * sin(_angle) + _p.y * cos(_angle));
+            float a = atan(_p.y, _p.x);
+            float flower_sectoral_shape = pow(abs(sin(a * _pet_n)), .4) + .25;
+            vec2 flower_size_range = vec2(.02, .15) * u_size_scale; // Escala responsiva
+            float size = flower_size_range[0] + u_stop_randomizer[0] * flower_size_range[1];
+            float flower_radial_shape = pow(length(_p) / size, 2.);
+            flower_radial_shape -= .1 * sin(8. * a);
+            flower_radial_shape = max(.1, flower_radial_shape);
+            flower_radial_shape += smoothstep(0., 0.03, -_p.y + .2 * abs(_p.x));
+            float grow_time = step(.25, u_stop_time) * pow(u_stop_time, .3);
+            float flower_shape = 1. - smoothstep(0., flower_sectoral_shape, _outline * flower_radial_shape / grow_time);
+            flower_shape *= (1. - step(1., grow_time));
+            return flower_shape;
+        }
+        
+        float get_stem_shape(vec2 _p, vec2 _uv, float _w, float _angle) {
+            _w = max(.004, _w);
+            float x_offset = _p.y * sin(_angle);
+            x_offset *= pow(3. * _uv.y, 2.);
+            _p.x -= x_offset;
+            float noise_power = .1; // Menos ruido para un tallo más suave y recto
+            float cursor_horizontal_noise = noise_power * snoise(2. * _uv * u_stop_randomizer[0]);
+            cursor_horizontal_noise *= pow(dot(_p.y, _p.y), .6);
+            cursor_horizontal_noise *= pow(dot(_uv.y, _uv.y), .3);
+            _p.x += cursor_horizontal_noise;
+            float left = smoothstep(-_w, 0., _p.x);
+            float right = 1. - smoothstep(0., _w, _p.x);
+            float stem_shape = left * right;
+            float grow_time = 1. - smoothstep(0., .2, u_stop_time);
+            float stem_top_mask = smoothstep(0., pow(grow_time, .5), .03 -_p.y);
+            stem_shape *= stem_top_mask;
+            stem_shape *= (1. - step(.17, u_stop_time));
+            return stem_shape;
+        }
+        
+        void main() {
+            vec3 base = texture2D(u_texture, vUv).xyz;
+            vec2 uv = vUv;
+            uv.x *= u_ratio;
+            vec2 cursor = vUv - u_cursor.xy;
+            cursor.x *= u_ratio;
+            
+            vec3 stem_color = u_stem_color * vec3(0.8 + u_stop_randomizer[0] * 0.4);
+            vec3 flower_color = u_flower_color * (0.8 + 0.4 * u_stop_randomizer[1]); // Variación de brillo, no de tono
+            
+            float angle = (u_stop_randomizer[0] - 0.5) * 0.5; // Rotación reducida (más natural)
+            
+            float base_thickness = u_stem_thickness * 0.005 * u_size_scale; // Tallo proporcional
+            float stem_shape = get_stem_shape(cursor, uv, base_thickness, angle);
+            stem_shape += get_stem_shape(cursor + vec2(0., .2 + .5 * u_stop_randomizer[0]), uv, base_thickness, angle);
+            
+            float stem_mask = 1. - get_stem_shape(cursor, uv, base_thickness * 1.3, angle);
+            stem_mask -= get_stem_shape(cursor + vec2(0., .2 + .5 * u_stop_randomizer[0]), uv, base_thickness * 1.3, angle);
+            
+            float petals_back_number = 1. + floor(u_stop_randomizer[0] * 4.); // Más variedad de pétalos traseros (1-4)
+            float angle_offset = -(2. * step(0., angle) - 1.) * .1 * u_stop_time;
+            float flower_back_shape = get_flower_shape(cursor, petals_back_number, angle + angle_offset, 1.5);
+            float flower_back_mask = 1. - get_flower_shape(cursor, petals_back_number, angle + angle_offset, 1.6);
+            
+            float petals_front_number = 2. + floor(u_stop_randomizer[1] * 3.); // Más variedad de pétalos frontales (2-4)
+            float flower_front_shape = get_flower_shape(cursor, petals_front_number, angle, 1.);
+            float flower_front_mask = 1. - get_flower_shape(cursor, petals_front_number, angle, .95);
+            
+            vec3 color = base;
+            color *= stem_mask;
+            color *= flower_back_mask;
+            color *= flower_front_mask;
+            
+            color = mix(color, stem_color, stem_shape);
+            
+            color += (flower_back_shape * (flower_color + vec3(0., .8 * u_stop_time, 0.)));
+            color += (flower_front_shape * flower_color);
+            
+            color.r *= 1. - (.5 * flower_back_shape * flower_front_shape);
+            color.b *= 1. - (flower_back_shape * flower_front_shape);
+            
+            color *= u_clean;
+            
+            gl_FragColor = vec4(color, 1.);
+        }
+    </script>
+    <script type="x-shader/x-vertex" id="vertexShader">
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = vec4(position, 1.);
+        }
+    </script>
+
+    <script type="module" src="main/script.js"></script>
+</body>
+</html>

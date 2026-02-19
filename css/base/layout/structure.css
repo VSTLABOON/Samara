@@ -1,0 +1,48 @@
+.living-background { 
+    position: fixed; 
+    inset: 0; 
+    z-index: var(--z-bg); 
+    pointer-events: none; 
+}
+
+.canvas-container { 
+    position: fixed; 
+    inset: 0; 
+    z-index: var(--z-canvas); 
+    pointer-events: all; 
+}
+
+canvas { 
+    display: block; 
+    width: 100%; 
+    height: 100%; 
+}
+
+.name {
+    position: fixed; 
+    top: 50%; 
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Crimson Pro', serif; 
+    font-size: clamp(1.5rem, 5vw, 3.5rem);
+    font-style: italic; 
+    color: rgba(255, 255, 255, 0.3);
+    pointer-events: none; 
+    z-index: var(--z-text);
+    text-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    animation: fadeIn 2s ease forwards;
+}
+
+.ui-wrapper {
+    position: fixed; 
+    bottom: clamp(12px, 3vw, 24px); 
+    left: 50%; 
+    transform: translateX(-50%);
+    width: var(--ui-width); 
+    z-index: var(--z-ui);
+    display: flex; 
+    flex-direction: column-reverse;
+    align-items: center; 
+    gap: var(--gap-ui);
+    pointer-events: none; 
+}

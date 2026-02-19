@@ -1,0 +1,53 @@
+/* Generic Overlay */
+.panel-overlay {
+    position: fixed; inset: 0; 
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+    opacity: 0; pointer-events: none; transition: 0.4s; 
+    z-index: var(--z-overlay);
+}
+.panel-overlay.active { opacity: 1; pointer-events: all; }
+
+/* Custom Dialog */
+.custom-dialog-overlay {
+    position: fixed; inset: 0; z-index: var(--z-dialog);
+    background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; visibility: hidden; pointer-events: none; 
+    transition: opacity 0.3s ease, visibility 0.3s;
+}
+.custom-dialog-overlay.active { opacity: 1; visibility: visible; pointer-events: all; }
+
+.custom-dialog-content {
+    width: min(420px, 90vw);
+    background: rgba(26, 26, 32, 0.95); backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px;
+    padding: clamp(24px, 5vw, 36px); text-align: center;
+    transform: translateY(20px) scale(0.95);
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+}
+.custom-dialog-overlay.active .custom-dialog-content { transform: translateY(0) scale(1); }
+
+.dialog-title {
+    font-family: 'Crimson Pro', serif; font-size: clamp(1.2rem, 4vw, 1.5rem);
+    font-weight: 500; margin-bottom: 12px; color: rgba(255, 255, 255, 0.95);
+}
+
+.dialog-message {
+    font-size: clamp(13px, 3vw, 15px); line-height: 1.6;
+    color: rgba(255, 255, 255, 0.7); margin-bottom: clamp(20px, 4vw, 28px);
+}
+
+.dialog-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+.btn-dialog {
+    padding: clamp(10px, 2vw, 12px) clamp(20px, 4vw, 28px);
+    border-radius: 12px; border: none; font-size: clamp(12px, 2.5vw, 14px);
+    font-weight: 600; cursor: pointer; transition: all 0.2s; min-width: 100px;
+}
+
+.btn-confirm { background: #fff; color: #000; }
+.btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2); }
+
+.btn-cancel { background: transparent; color: rgba(255, 255, 255, 0.7); border: 1px solid rgba(255, 255, 255, 0.15); }
+.btn-cancel:hover { background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.9); }

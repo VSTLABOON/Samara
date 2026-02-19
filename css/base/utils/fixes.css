@@ -1,0 +1,60 @@
+/* Responsive Overrides */
+@media (max-width: 768px) {
+    .tools-grid { grid-template-columns: repeat(2, 1fr); }
+    .unified-menu { max-height: 80vh; }
+    .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+}
+
+@media (max-width: 480px) {
+    :root { --nav-height: 70px; }
+    .bottom-nav { padding: 0 6px; }
+    .nav-item span { display: none; }
+    .tools-grid { grid-template-columns: 1fr 1fr; }
+    .inbox-container { width: 100vw; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .nav-item:active { transform: scale(0.95); }
+    .tool-item:active .tool-icon { transform: scale(0.95); }
+}
+
+/* --- POINTER EVENTS FIX (CRITICO) --- */
+.name, .living-background, .canvas-container, .ui-wrapper {
+    pointer-events: none !important; user-select: none !important;
+}
+
+#canvas {
+    pointer-events: auto !important; cursor: crosshair !important;
+    position: absolute !important; top: 0 !important; left: 0 !important;
+    width: 100% !important; height: 100% !important; z-index: 1 !important;
+}
+
+/* CONTENEDORES DE MODALES: 
+   Por defecto NO deben bloquear (none). 
+   Solo bloquean cuando están activos/abiertos. */
+.inbox-container,
+.gallery-modal,
+.dedicatory-modal,
+.panel-overlay,
+.custom-dialog-overlay,
+.dedicatories-view-modal {
+    pointer-events: none !important;
+}
+
+/* Cuando están activos, permitimos interacción en ellos y sus hijos */
+.inbox-container.open, .inbox-container.open *,
+.gallery-modal.active, .gallery-modal.active *,
+.dedicatory-modal.active, .dedicatory-modal.active *,
+.panel-overlay.active,
+.custom-dialog-overlay.active, .custom-dialog-overlay.active *,
+.dedicatories-view-modal.active, .dedicatories-view-modal.active * {
+    pointer-events: auto !important;
+}
+
+.nav-item, .tool-item, .color-option, .menu-back, .menu-close, 
+.rain-mode-btn, .combo-btn, .btn-rain-activate {
+    pointer-events: auto !important; cursor: pointer !important;
+}
+
+/* Debug */
+#canvas.debug-mode { border: 2px solid red !important; }
