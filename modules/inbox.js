@@ -675,19 +675,25 @@ export class InboxManager {
     refreshMessages() {
         this.blocksContainer.classList.remove('has-active-focus');
 
+        // 1. Mensajes del sistema: Ordenados ESTRICTAMENTE por 'order' (índice en el código)
+        // Ignoramos la fecha para estos mensajes.
         const systemMsgs = this.messages
             .filter(m => m.type === 'system')
             .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
+        // 2. Mensajes de usuario: Ordenados por fecha (más reciente primero)
         const userMsgs = this.messages
             .filter(m => m.type !== 'system')
             .sort((a, b) => new Date(b.date) - new Date(a.date));
 
         this.blocksContainer.innerHTML = '';
 
-        // Primero las notas de usuario (quedarán al final visualmente)
+        // Renderizar notas de usuario primero (quedarán al final visualmente por el prepend)
         [...userMsgs].reverse().forEach(msg => this.renderMessage(msg));
-        // Luego los del sistema de atrás hacia adelante (el índice 0 quedará primero)
+        
+        // Renderizar mensajes del sistema después (quedarán al principio visualmente)
+        // Invertimos el array para que el índice 0 (el primero del código) sea el último en insertarse
+        // y, por tanto, quede en la cima de la lista (firstChild).
         [...systemMsgs].reverse().forEach(msg => this.renderMessage(msg));
 
         this.updateNotificationBadge();
